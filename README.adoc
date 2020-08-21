@@ -1,0 +1,137 @@
+= JMH Maven Plugin
+
+This is a maven plugin able to run https://openjdk.java.net/projects/code-tools/jmh/[JMH] benchmarks
+contained in the test sources without much other ceremony.
+
+== Prior Art
+
+=== JMH archetype
+The archetype for JMH sets up a structure where it uses its generator to generate the benchmark scaffolding
+and then it sets up the maven build with a shade plugin that combines all the dependencies, benchmark
+classes, and the scaffolding classes into a single jar.
+
+One is then expected to run this jar with JMH specific arguments to run the actual benchmark.
+
+Another caveat of this approach is that this is best done in a separate maven module and thus you have the benchmarks
+separate from your actual code and tests.
+
+=== JMH Maven Plugin from Baidu
+
+There already is a maven plugin that does the same thing as this project, the `com.baidu.maven:jmh-maven-plugin`.
+That plugin runs the benchmark in-process whereas this plugin runs the benchmark in its own JVM which should
+theoretically give more consistent results. It is also tied to a single JMH version.
+
+== Usage
+
+This plugin tries to be more ergonomic. It searches for the benchmarks in the test sources, can work directly in the
+same module as the code being benchmarked, doesn't require shading, and can actually run the benchmarks instead of just
+generating the benchmark jar.
+
+As such, one usually only needs to do this:
+
+In `pom.xml`:
+```xml
+
+<dependencies>
+    <dependency>
+        <groupId>org.openjdk.jmh</groupId> <1>
+        <artifactId>jmh-core</artifactId>
+        <version>...</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>pw.krejci</groupId> <2>
+            <artifactId>jmh-maven-plugin</artifactId>
+            <version>...</version>
+        </plugin>
+    </plugins>
+</build>
+```
+
+<1> You write your benchmarks in the test sources, so you need to depend on JMH core in your tests. You can use any
+version of JMH you will, the plugin will under the hood use the JMH annotation processor of the same version for
+compiling the benchmarks.
+
+<2> Declaring this plugin in the `pom.xml` makes it possible to later invoke it using its short name.
+
+With this simple setup, you are then able to run the benchmarks using just:
+
+```
+mvn jmh:benchmark
+```
+
+NOTE: It is not possible to run the benchmarks as part of a normal build. This plugin needs to be invoked explicitly
+from the commandline. This is because benchmarks are usually long-running and running them is not usually needed as part
+of a normal build process.
+
+== Passing Parameters
+
+This plugin is designed for direct invocation. But you can also configure the default values of the parameters in its
+plugin configuration in the `pom.xml`.
+
+For the latter you can use the property names from the table below. As such, the `pom.xml` contains the long, human
+readable names of the properties.
+
+On the commandline, this plugin uses the parameter names derived from the corresponding commandline parameters
+of JMH itself.
+
+So a JMH benchmark.jar based invocation like:
+
+```
+java -jar target/benchmark.jar -i 15 -bm thrpt
+```
+
+can be invoked using this plugin as:
+
+```
+mvn jmh:benchmark -Djmh.i=15 -Djmh.bm=thrpt
+```
+
+You can get the help text for the various parameters using this invocation:
+
+```
+mvn jmh:benchmark -Djmh.h
+```
+
+The following parameters are supported:
+
+|===
+| Property | Commandline name | JMH equivalent
+
+| `benchmarkMode` | `jmh.bm` | `-bm`
+| `batchSize` | `jmh.bs` | `-bs`
+| `exclude` | `jmh.e` | `-e`
+| `fork` | `jmh.f` | `-f`
+| `failOnError` | `jmh.foe` | `-foe`
+| `forceGC` | `jmh.gc` | `-gc`
+| `help` | `jmh.h` | `-h`
+| `iterations` | `jmh.i` | `-i`
+| `outputFile` | `jmh.o` | `-o`
+| `operationsPerInvocation` | `jmh.opi` | `-opi`
+| `profilers` | `jmh.prof` | `-prof`
+| `timeOnIteration` | `jmh.r` | `-r`
+| `resultFormat` | `jmh.rf` | `-rf`
+| `resultsFile` | `jmh.rff` | `-rff`
+| `synchronizeIterations` | `jmh.si` | `-si`
+| `threads` | `jmh.t` | `-t`
+| `threadGroups` | `jmh.tg` | `-tg`
+| `timeout` | `jmh.to` | `-to`
+| `timeUnit` | `jmh.tu` | `-tu`
+| `verbosity` | `jmh.v` | `-v`
+| `warmup` | `jmh.w` | `-w`
+| `warmupBatchSize` | `jmh.wbs` | `-wbs`
+| `warmupForks` | `jmh.wf` | `-wf`
+| `warmupIterations` | `jmh.wi` | `-wi`
+| `warmupMode` | `jmh.wm` | `-wm`
+| `warmupBenchmarks` | `jmh.wmb` | `-wmb`
+
+|===
+
+== Notes
+
+This plugin does not generate the uber-jar as is usual with the default JMH approach. It instead just invokes
+the benchmark with the classpath containing all dependencies from the pom.
