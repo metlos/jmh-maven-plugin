@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>pw.krejci</groupId>
     <artifactId>jmh-maven-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>maven-plugin</packaging>
     <name>JMH Maven Plugin</name>
     <description>A Maven plugin for running JMH benchmarks from the test sources.</description>
@@ -24,7 +22,7 @@
 
         <skipTests>false</skipTests>
         <itest.debug-output>false</itest.debug-output>
-        <itest.maven-opts/>
+        <itest.maven-opts />
 
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -237,7 +235,7 @@
         <connection>scm:git:git://github.com/metlos/jmh-maven-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/metlos/jmh-maven-plugin.git</developerConnection>
         <url>https://github.com/metlos/jmh-maven-plugin</url>
-        <tag>HEAD</tag>
+        <tag>jmh-maven-plugin-0.1.0</tag>
     </scm>
 
     <distributionManagement>
