@@ -18,14 +18,13 @@ separate from your actual code and tests.
 === JMH Maven Plugin from Baidu
 
 There already is a maven plugin that does the same thing as this project, the `com.baidu.maven:jmh-maven-plugin`.
-That plugin runs the benchmark in-process whereas this plugin runs the benchmark in its own JVM which should
-theoretically give more consistent results. It is also tied to a single JMH version.
+The Baidu maven plugin only runs the benchmark that already needs to be built though, possibly using the archetype
+approach mentioned above.
 
 == Usage
 
 This plugin tries to be more ergonomic. It searches for the benchmarks in the test sources, can work directly in the
-same module as the code being benchmarked, doesn't require shading, and can actually run the benchmarks instead of just
-generating the benchmark jar.
+same module as the code being benchmarked, doesn't require shading, and can actually both build and run the benchmarks.
 
 As such, one usually only needs to do this:
 
@@ -110,9 +109,10 @@ The following parameters are supported:
 | `forceGC` | `jmh.gc` | `-gc`
 | `help` | `jmh.h` | `-h`
 | `iterations` | `jmh.i` | `-i`
+| `listProfilers` | `jmh.lprof` | `-lprof`
 | `outputFile` | `jmh.o` | `-o`
 | `operationsPerInvocation` | `jmh.opi` | `-opi`
-| `profilers` | `jmh.prof` | `-prof`
+| `profiler` | `jmh.prof` | `-prof`
 | `timeOnIteration` | `jmh.r` | `-r`
 | `resultFormat` | `jmh.rf` | `-rf`
 | `resultsFile` | `jmh.rff` | `-rff`

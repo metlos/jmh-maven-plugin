@@ -8,14 +8,19 @@
     <artifactId>jmh-maven-plugin</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
-
+    <name>JMH Maven Plugin</name>
+    <description>A Maven plugin for running JMH benchmarks from the test sources.</description>
+    <url>https://github.com/metlos/jmh-maven-plugin</url>
+    
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <version.maven>3.6.0</version.maven>
-        <version.org.openjdk.jmh>1.25</version.org.openjdk.jmh>
         <version.maven-plugin-plugin>3.6.0</version.maven-plugin-plugin>
         <version.maven-invoker>1.9</version.maven-invoker>
         <version.maven-compiler>3.8.1</version.maven-compiler>
-        <version.org.ow2.asm>8.0.1</version.org.ow2.asm>
+        <version.net.revelc.code.formatter>2.12.1</version.net.revelc.code.formatter>
+        <version.net.revelc.code>1.4.1</version.net.revelc.code>
 
         <skipTests>false</skipTests>
         <itest.debug-output>false</itest.debug-output>
@@ -30,18 +35,6 @@
     </prerequisites>
 
     <dependencies>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>${version.org.ow2.asm}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-asm</artifactId>
-            <version>${version.org.openjdk.jmh}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
@@ -76,6 +69,35 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>${version.net.revelc.code.formatter}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>${version.net.revelc.code}</version>
+                <configuration>
+                    <groups>java.,javax.,*</groups>
+                    <staticGroups>java,javax,*</staticGroups>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-invoker-plugin</artifactId>
                 <version>${version.maven-invoker}</version>
@@ -136,5 +158,92 @@
                 <itest.debug-output>false</itest.debug-output>
             </properties>
         </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
+
+    <inceptionYear>2020</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Lukas Krejci</name>
+        <url>http://lukas.krejci.pw</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Lukas Krejci</name>
+            <email>lukas@krejci.pw</email>
+            <url>http://lukas.krejci.pw</url>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>github-issues</system>
+        <url>https://github.com/metlos/jmh-maven-plugin/issues</url>
+    </issueManagement>
+
+
+    <scm>
+        <connection>scm:git:git://github.com/metlos/jmh-maven-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/metlos/jmh-maven-plugin.git</developerConnection>
+        <url>https://github.com/metlos/jmh-maven-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>
