@@ -1,5 +1,15 @@
 package pw.krejci.jmh.maven;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -22,35 +32,23 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.repository.RepositorySystem;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
  * Runs the JMH benchmarks using all benchmarks files from the test sources.
  *
- * <p>The properties of this goal correspond to the commandline parameters of JMH.
- * If you want to set the number of iterations, you use {@code mvn jmh:benchmark -Djmh.i=15} similarly to like
- * you would do with JMH proper {@code java -jar target/benchmark.jar -i 15}.
+ * <p>
+ * The properties of this goal correspond to the commandline parameters of JMH. If you want to set the number of
+ * iterations, you use {@code mvn jmh:benchmark -Djmh.i=15} similarly to like you would do with JMH proper
+ * {@code java -jar target/benchmark.jar -i 15}.
  *
- * <p>In another words the names of the commandline parameters are the same as for JMH proper only prefixed
- * with "jmh.".
+ * <p>
+ * In another words the names of the commandline parameters are the same as for JMH proper only prefixed with "jmh.".
  */
-@Mojo(
-        name = "benchmark",
-        requiresDirectInvocation = true,
-        requiresDependencyResolution = ResolutionScope.TEST
-)
+@Mojo(name = "benchmark", requiresDirectInvocation = true, requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.PROCESS_TEST_RESOURCES)
 public class BenchmarkMojo extends TestCompilerMojo {
 
     private static final String PROPERTY_PREFIX = "jmh.";
-    
+
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession benchmarkSession;
 
@@ -78,6 +76,9 @@ public class BenchmarkMojo extends TestCompilerMojo {
     @Parameter(property = PROPERTY_PREFIX + "i")
     private Integer iterations;
 
+    @Parameter(property = PROPERTY_PREFIX + "lprof")
+    private boolean listProfilers;
+
     @Parameter(property = PROPERTY_PREFIX + "o")
     private File outputFile;
 
@@ -85,7 +86,7 @@ public class BenchmarkMojo extends TestCompilerMojo {
     private Integer operationsPerInvocation;
 
     @Parameter(property = PROPERTY_PREFIX + "prof")
-    private List<String> profilers;
+    private String profiler;
 
     @Parameter(property = PROPERTY_PREFIX + "r")
     private String timeOnIteration;
@@ -145,7 +146,21 @@ public class BenchmarkMojo extends TestCompilerMojo {
 
     @Override
     public void execute() throws MojoExecutionException, CompilationFailureException {
+        File outputDir = new File(getProject().getBuild().getOutputDirectory());
+        if (!outputDir.exists()) {
+            getLog().info("No classes to build the benchmark for.");
+            return;
+        }
+
         super.execute();
+
+        File benchmarkList = new File(new File(getProject().getBuild().getTestOutputDirectory(), "META-INF"),
+                "BenchmarkList");
+        if (!benchmarkList.exists()) {
+            getLog().info("No benchmarks found, skipping.");
+            return;
+        }
+
         runBenchMarks();
     }
 
@@ -164,25 +179,15 @@ public class BenchmarkMojo extends TestCompilerMojo {
 
         String jmhVersion = getProject().getDependencies().stream()
                 .filter(d -> d.getGroupId().equals("org.openjdk.jmh") && d.getArtifactId().equals("jmh-core"))
-                .map(Dependency::getVersion)
-                .findFirst()
+                .map(Dependency::getVersion).findFirst()
                 .orElseThrow(() -> new IllegalStateException("Could not find jmh-core in the list of dependencies."));
 
-        Artifact artifact = new DefaultArtifact(
-                "org.openjdk.jmh",
-                "jmh-generator-annprocess",
-                VersionRange.createFromVersion(jmhVersion),
-                Artifact.SCOPE_RUNTIME,
-                "jar",
-                null,
-                benchmarkArtifactHandlerManager.getArtifactHandler("jar"),
-                false);
+        Artifact artifact = new DefaultArtifact("org.openjdk.jmh", "jmh-generator-annprocess",
+                VersionRange.createFromVersion(jmhVersion), Artifact.SCOPE_RUNTIME, "jar", null,
+                benchmarkArtifactHandlerManager.getArtifactHandler("jar"), false);
 
-        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                .setArtifact(artifact)
-                .setResolveRoot(true)
-                .setResolveTransitively(true)
-                .setLocalRepository(benchmarkSession.getLocalRepository())
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest().setArtifact(artifact).setResolveRoot(true)
+                .setResolveTransitively(true).setLocalRepository(benchmarkSession.getLocalRepository())
                 .setRemoteRepositories(getProject().getRemoteArtifactRepositories());
 
         ArtifactResolutionResult resolutionResult = benchmarkRepositorySystem.resolve(request);
@@ -215,7 +220,7 @@ public class BenchmarkMojo extends TestCompilerMojo {
             // ignored, because this should not happen. We're requiring dependency resolution...
         }
 
-        String jvm = System.getProperty( "java.home" ) + File.separator + "bin" + File.separator + "java";
+        String jvm = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
         List<String> command = new ArrayList<>();
         command.add(jvm);
         command.add("-cp");
@@ -224,31 +229,36 @@ public class BenchmarkMojo extends TestCompilerMojo {
         if (help) {
             command.add("-h");
         }
-        addParameter(command, "bm", benchmarkMode);
-        addParameter(command, "bs", batchSize);
-        addParameter(command, "e", exclude);
-        addParameter(command, "f", fork);
-        addParameter(command, "foe", failOnError);
-        addParameter(command, "gc", forceGC);
-        addParameter(command, "i", iterations);
-        addParameter(command, "o", outputFile);
-        addParameter(command, "opi", operationsPerInvocation);
-        addParameter(command, "prof", profilers);
-        addParameter(command, "r", timeOnIteration);
-        addParameter(command, "rf", resultFormat);
-        addParameter(command, "rff", resultsFile);
-        addParameter(command, "si", synchronizeIterations);
-        addParameter(command, "t", threads);
-        addParameter(command, "tg", threadGroups);
-        addParameter(command, "to", timeout);
-        addParameter(command, "tu", timeUnit);
-        addParameter(command, "v", verbosity);
-        addParameter(command, "w", warmup);
-        addParameter(command, "wbs", warmupBatchSize);
-        addParameter(command, "wf", warmupForks);
-        addParameter(command, "wi", warmupIterations);
-        addParameter(command, "wm", warmupMode);
-        addParameter(command, "wmb", warmupBenchmarks);
+        if (listProfilers) {
+            command.add("-lprof");
+        }
+        addParameter(command, "-bm", benchmarkMode);
+        addParameter(command, "-bs", batchSize);
+        addParameter(command, "-e", exclude);
+        addParameter(command, "-f", fork);
+        addParameter(command, "-foe", failOnError);
+        addParameter(command, "-gc", forceGC);
+        addParameter(command, "-i", iterations);
+        addParameter(command, "-o", outputFile);
+        addParameter(command, "-opi", operationsPerInvocation);
+        addParameter(command, "-prof", profiler);
+        addParameter(command, "-r", timeOnIteration);
+        addParameter(command, "-rf", resultFormat);
+        addParameter(command, "-rff", resultsFile);
+        addParameter(command, "-si", synchronizeIterations);
+        addParameter(command, "-t", threads);
+        addParameter(command, "-tg", threadGroups);
+        addParameter(command, "-to", timeout);
+        addParameter(command, "-tu", timeUnit);
+        addParameter(command, "-v", verbosity);
+        addParameter(command, "-w", warmup);
+        addParameter(command, "-wbs", warmupBatchSize);
+        addParameter(command, "-wf", warmupForks);
+        addParameter(command, "-wi", warmupIterations);
+        addParameter(command, "-wm", warmupMode);
+        addParameter(command, "-wmb", warmupBenchmarks);
+
+        getLog().debug("Running JMH using: " + command);
 
         ProcessBuilder bld = new ProcessBuilder(command);
         bld.directory(getProject().getBasedir());
@@ -256,7 +266,8 @@ public class BenchmarkMojo extends TestCompilerMojo {
         try {
             getLog().info("Executing the JMH benchmarks");
             Process process = bld.start();
-            try (BufferedReader rdr = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader rdr = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = rdr.readLine()) != null) {
                     System.out.println(line);
@@ -274,15 +285,31 @@ public class BenchmarkMojo extends TestCompilerMojo {
     }
 
     private static void addParameter(List<String> command, String paramName, Object paramValue) {
+        paramValue = cleanseValue(paramValue);
         if (paramValue != null) {
-            command.add(paramName);
             if (paramValue instanceof List) {
-                command.add(((List<?>) paramValue).stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(",")));
+                String val = ((List<?>) paramValue).stream().map(BenchmarkMojo::cleanseValue).filter(Objects::nonNull)
+                        .map(Object::toString).collect(Collectors.joining(","));
+                if (!val.isEmpty()) {
+                    command.add(paramName);
+                    command.add(val);
+                }
             } else {
+                command.add(paramName);
                 command.add(paramValue.toString());
             }
         }
+    }
+
+    private static Object cleanseValue(Object paramValue) {
+        if (paramValue == null) {
+            return null;
+        }
+
+        if (paramValue instanceof String && ((String) paramValue).trim().isEmpty()) {
+            return null;
+        }
+
+        return paramValue;
     }
 }
