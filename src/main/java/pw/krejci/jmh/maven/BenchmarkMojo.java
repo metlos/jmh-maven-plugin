@@ -133,6 +133,9 @@ public class BenchmarkMojo extends TestCompilerMojo {
     @Parameter(property = PROPERTY_PREFIX + "wmb")
     private List<String> warmupBenchmarks;
 
+    @Parameter(property = PROPERTY_PREFIX + "benchmarks")
+    private List<String> benchmarks;
+
     @Component
     private RepositorySystem benchmarkRepositorySystem;
 
@@ -257,6 +260,9 @@ public class BenchmarkMojo extends TestCompilerMojo {
         addParameter(command, "-wi", warmupIterations);
         addParameter(command, "-wm", warmupMode);
         addParameter(command, "-wmb", warmupBenchmarks);
+        if (benchmarks != null) {
+            command.addAll(benchmarks);
+        }
 
         getLog().debug("Running JMH using: " + command);
 
