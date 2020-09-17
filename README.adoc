@@ -67,6 +67,16 @@ NOTE: It is not possible to run the benchmarks as part of a normal build. This p
 from the commandline. This is because benchmarks are usually long-running and running them is not usually needed as part
 of a normal build process.
 
+== Selecting Benchmarks to Run
+
+Using the property `jmh.benchmarks` which is a comma separated list of regexes, you can specify which benchmarks should be run.
+
+E.g.
+
+```
+mvn jmh:benchmark -Djmh.benchmarks=Quick
+```
+
 == Passing Parameters
 
 This plugin is designed for direct invocation. But you can also configure the default values of the parameters in its
