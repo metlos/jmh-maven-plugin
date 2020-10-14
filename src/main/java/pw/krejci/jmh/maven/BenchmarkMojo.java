@@ -149,12 +149,6 @@ public class BenchmarkMojo extends TestCompilerMojo {
 
     @Override
     public void execute() throws MojoExecutionException, CompilationFailureException {
-        File outputDir = new File(getProject().getBuild().getOutputDirectory());
-        if (!outputDir.exists()) {
-            getLog().info("No classes to build the benchmark for.");
-            return;
-        }
-
         super.execute();
 
         File benchmarkList = new File(new File(getProject().getBuild().getTestOutputDirectory(), "META-INF"),
