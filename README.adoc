@@ -119,6 +119,9 @@ The following parameters are supported:
 | `forceGC` | `jmh.gc` | `-gc`
 | `help` | `jmh.h` | `-h`
 | `iterations` | `jmh.i` | `-i`
+| `jvmArgs` | `jmh.jvmArgs` | `-jvmArgs`
+| `jvmArgsPrepend` | `jmh.jvmArgsPrepend` | `-jvmArgsPrepend`
+| `jvmArgsAppend` | `jmh.jvmArgsAppend` | `-jvmArgsAppend`
 | `listProfilers` | `jmh.lprof` | `-lprof`
 | `outputFile` | `jmh.o` | `-o`
 | `operationsPerInvocation` | `jmh.opi` | `-opi`

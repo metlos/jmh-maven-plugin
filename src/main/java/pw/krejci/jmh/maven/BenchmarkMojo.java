@@ -136,6 +136,15 @@ public class BenchmarkMojo extends TestCompilerMojo {
     @Parameter(property = PROPERTY_PREFIX + "benchmarks")
     private List<String> benchmarks;
 
+    @Parameter(property = PROPERTY_PREFIX + "jvmArgs")
+    private List<String> jvmArgs;
+
+    @Parameter(property = PROPERTY_PREFIX + "jvmArgsAppend")
+    private List<String> jvmArgsAppend;
+
+    @Parameter(property = PROPERTY_PREFIX + "jvmArgsPrepend")
+    private List<String> jvmArgsPrepend;
+
     @Component
     private RepositorySystem benchmarkRepositorySystem;
 
@@ -254,6 +263,9 @@ public class BenchmarkMojo extends TestCompilerMojo {
         addParameter(command, "-wi", warmupIterations);
         addParameter(command, "-wm", warmupMode);
         addParameter(command, "-wmb", warmupBenchmarks);
+        addParameter(command, "-jvmArgs", jvmArgs);
+        addParameter(command, "-jvmArgsPrepend", jvmArgsPrepend);
+        addParameter(command, "-jvmArgsAppend", jvmArgsAppend);
         if (benchmarks != null) {
             command.addAll(benchmarks);
         }
