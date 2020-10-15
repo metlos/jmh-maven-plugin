@@ -3,28 +3,13 @@
 This is a maven plugin able to run https://openjdk.java.net/projects/code-tools/jmh/[JMH] benchmarks
 contained in the test sources without much other ceremony.
 
-== Prior Art
-
-=== JMH archetype
-The archetype for JMH sets up a structure where it uses its generator to generate the benchmark scaffolding
-and then it sets up the maven build with a shade plugin that combines all the dependencies, benchmark
-classes, and the scaffolding classes into a single jar.
-
-One is then expected to run this jar with JMH specific arguments to run the actual benchmark.
-
-Another caveat of this approach is that this is best done in a separate maven module and thus you have the benchmarks
-separate from your actual code and tests.
-
-=== JMH Maven Plugin from Baidu
-
-There already is a maven plugin that does the same thing as this project, the `com.baidu.maven:jmh-maven-plugin`.
-The Baidu maven plugin only runs the benchmark that already needs to be built though, possibly using the archetype
-approach mentioned above.
+https://maven-badges.herokuapp.com/maven-central/pw.krejci/jmh-maven-plugin[image:https://maven-badges.herokuapp.com/maven-central/pw.krejci/jmh-maven-plugin/badge.svg[]]
 
 == Usage
 
-This plugin tries to be more ergonomic. It searches for the benchmarks in the test sources, can work directly in the
-same module as the code being benchmarked, doesn't require shading, and can actually both build and run the benchmarks.
+This plugin tries to be more ergonomic than the alternatives mentioned in <<Prior Art>>. It searches for the benchmarks
+in the test sources, can work directly in the same module as the code being benchmarked, doesn't require shading, and
+can actually both build and run the benchmarks.
 
 As such, one usually only needs to do this:
 
@@ -52,7 +37,7 @@ In `pom.xml`:
 ```
 
 <1> You write your benchmarks in the test sources, so you need to depend on JMH core in your tests. You can use any
-version of JMH you will, the plugin will under the hood use the JMH annotation processor of the same version for
+version of JMH you want, the plugin will under the hood use the JMH annotation processor of the same version for
 compiling the benchmarks.
 
 <2> Declaring this plugin in the `pom.xml` makes it possible to later invoke it using its short name.
@@ -63,13 +48,13 @@ With this simple setup, you are then able to run the benchmarks using just:
 mvn jmh:benchmark
 ```
 
-NOTE: It is not possible to run the benchmarks as part of a normal build. This plugin needs to be invoked explicitly
-from the commandline. This is because benchmarks are usually long-running and running them is not usually needed as part
-of a normal build process.
+NOTE: By design, this plugin only supports explicit invocation from the commandline. This is because benchmarks are not
+part of the normal build workflow in the vast number of cases. When you want to run them, just be explicit about it.
 
 == Selecting Benchmarks to Run
 
-Using the property `jmh.benchmarks` which is a comma separated list of regexes, you can specify which benchmarks should be run.
+Using the property `jmh.benchmarks`, which is a comma separated list of regexes, you can specify which benchmarks should
+be run.
 
 E.g.
 
@@ -144,7 +129,25 @@ The following parameters are supported:
 
 |===
 
+== Prior Art
+
+=== JMH archetype
+The archetype for JMH sets up a structure where it uses its generator to generate the benchmark scaffolding
+and then it sets up the maven build with a shade plugin that combines all the dependencies, benchmark
+classes, and the scaffolding classes into a single jar.
+
+One is then expected to run this jar with JMH specific arguments to run the actual benchmark.
+
+Another caveat of this approach is that this is best done in a separate maven module and thus you have the benchmarks
+separate from your actual code and tests.
+
+=== JMH Maven Plugin from Baidu
+
+There already is a maven plugin that does the same thing as this project, the `com.baidu.maven:jmh-maven-plugin`.
+The Baidu maven plugin only runs a benchmark that has already been built though, possibly using the archetype
+approach mentioned above.
+
 == Notes
 
 This plugin does not generate the uber-jar as is usual with the default JMH approach. It instead just invokes
-the benchmark with the classpath containing all dependencies from the pom.
+the benchmark with the test classpath.
