@@ -147,6 +147,11 @@ There already is a maven plugin that does the same thing as this project, the `c
 The Baidu maven plugin only runs a benchmark that has already been built though, possibly using the archetype
 approach mentioned above.
 
+=== JMH Gradle Plugin
+
+The https://github.com/melix/jmh-gradle-plugin[JMH Gradle Plugin] has been an inspiration for writing this variant for
+Maven.
+
 == Notes
 
 This plugin does not generate the uber-jar as is usual with the default JMH approach. It instead just invokes
